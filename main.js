@@ -40,24 +40,27 @@ class Snake {
 	// TODO:
 	increase()
 	{
-        this._body.push({
-            x: this.head.x,
-            y: this.head.y - 1
-        });
+        this._body.push(this._next());
 	}	
 
 	move()
 	{		
 		let head = this._body[this._body.length - 1];
-		this._body.shift();
-		switch (this._direction)
-		{
-			case Direction.up: this._body.push({ x: head.x, y: head.y - 1 }); break;
-			case Direction.down: this._body.push({ x: head.x, y: head.y + 1 }); break;
-			case Direction.left: this._body.push({ x: head.x - 1, y: head.y }); break;
-			case Direction.right: this._body.push({ x: head.x + 1, y: head.y }); break;
-		}
+		this.increase();
+        this._body.shift();		
 	}
+
+    _next()
+    {
+        switch (this.direction)
+        {
+            case Direction.up: return { x: this.head.x, y: this.head.y - 1 };
+            case Direction.down: return { x: this.head.x, y: this.head.y + 1 };
+            case Direction.left: return { x: this.head.x - 1, y: this.head.y };
+            case Direction.right: return { x: this.head.x + 1, y: this.head.y };
+        }
+        throw "wrong direction"; // TODO:
+    }
 }
 /*---------------------------------------------------------------------------*/
 class Field {
@@ -110,12 +113,7 @@ class Game {
         this._snake = new Snake({ x: 7, y: 9 }, Direction.up);
         this._units = [];
 
-        this._time = 0;
-
-        // TODO:
-        this._snake.increase();
-        this._snake.increase();
-        this._snake.increase();   
+        this._time = 0; 
     }
 
     get field() { return this._field; }
@@ -139,6 +137,18 @@ class Game {
         }
 
         this._snake.move();
+
+        for (let i = 0; i < this.units.length; ++i)
+        {            
+            let snakeHead = this.snake.head;
+            let unit = this.units[i];
+
+            if ((snakeHead.x === unit.x) && (snakeHead.y === unit.y))
+            {
+                this.snake.increase();
+                this._units.splice(i, 1);
+            }
+        }
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -230,7 +240,7 @@ class Visual {
         const blockMargin = 3;
         const borderWidth = 1;
 
-        canvasContext.fillStyle = "#008800";
+        canvasContext.fillStyle = "#00FF00";
 
         for (let unit of units)
         {
@@ -276,4 +286,4 @@ window.addEventListener('keydown', args => {
 setInterval(() => { 
     game.process();	
 	visual.draw();
-}, 1000)
+}, 500)
