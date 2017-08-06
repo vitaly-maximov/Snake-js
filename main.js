@@ -106,6 +106,16 @@ class Field {
 
 	get height() { return this._height; }
 
+    get copy()
+    {
+        let c = this._cells.slice();
+        for (let row = 0; row < this._height; ++row)
+        {
+            c[row] = c[row].slice();
+        }
+        return c;
+    }
+
 	isWall(row, column) 
     {
 		return this._cells[row][column];
@@ -151,12 +161,31 @@ class Game {
 
         if (this._time % 10 === 0)
         {
-            let random = a => Math.floor(a * Math.random());
+            let that = this;
+            let freeCells = [... function* () {
+                let field = that._field.copy;
+                for (let unit of that._snake.body)
+                {
+                    field[unit.y][unit.x] = true;
+                }
 
-            let x = random(this._field.width);
-            let y = random(this._field.height);
+                for (let x = 0; x < that._field.width; ++x)
+                {
+                    for (let y = 0; y < that._field.height; ++y)
+                    {
+                        if (!field[y][x])
+                        {
+                            yield { x: x, y: y};
+                        }
+                    }
+                }
+            }()];
 
-            this._units.push(new Unit(x, y));
+            let a = Math.floor(freeCells.length * Math.random());
+
+            let cell = freeCells[a];
+
+            this._units.push(new Unit(cell.x, cell.y));
         }
 
         //this._snake.move();
