@@ -23,11 +23,25 @@ class Snake {
 
 		this._body = [head];
         this._direction = direction;
+
+        this._isDead = false;
 	}
 
     get head() { return this._body[this._body.length - 1]; }
     
 	get body() { return this._body; }
+
+    get tail() 
+    {
+        let that = this;
+        return function* ()
+        {
+            for (let i = 0; i < that._body.length - 1; ++i)
+            {
+                yield that._body[i];
+            }
+        }();
+    }
 
     get direction() { return this._direction; }
 
@@ -36,6 +50,10 @@ class Snake {
 
         this._direction = value;
     }
+
+    get isDead() { return this._isDead; }
+
+    die() { this._isDead = true; }
 
 	// TODO:
 	increase()
@@ -113,7 +131,7 @@ class Game {
         this._snake = new Snake({ x: 7, y: 9 }, Direction.up);
         this._units = [];
 
-        this._time = 0; 
+        this._time = 0;        
     }
 
     get field() { return this._field; }
@@ -124,6 +142,11 @@ class Game {
 
     process()
     {
+        if (this.snake.isDead)
+        {
+            return;
+        }
+
         this._time += 1;
 
         if (this._time % 10 === 0)
@@ -136,19 +159,42 @@ class Game {
             this._units.push(new Unit(x, y));
         }
 
-        this._snake.move();
+        //this._snake.move();
 
+        let snakeHead = this.snake._next();
+        let inc = false;
         for (let i = 0; i < this.units.length; ++i)
         {            
-            let snakeHead = this.snake.head;
+            
             let unit = this.units[i];
 
             if ((snakeHead.x === unit.x) && (snakeHead.y === unit.y))
             {
                 this.snake.increase();
                 this._units.splice(i, 1);
+                inc = true;
+                break;
             }
         }
+
+        if (this.field.isWall(snakeHead.y, snakeHead.x))
+        {
+            this.snake.die();
+        }
+
+        for (let unit of this.snake.tail)
+        {
+            if ((snakeHead.x === unit.x) && (snakeHead.y === unit.y))
+            {
+                this.snake.die();
+                break;
+            }
+        }
+
+        if (!inc)
+        {
+            this.snake.move();
+        }        
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -178,7 +224,7 @@ class Visual {
 
         for (let part of snake.body)
         {
-            canvasContext.fillStyle = "#00FF00";
+            canvasContext.fillStyle = snake.isDead ? "#FF0000" : "#00FF00";
 
             canvasContext.fillRect(
                         offset + part.x * (blockSize + 2 * blockMargin) + blockMargin + borderWidth,
@@ -240,7 +286,7 @@ class Visual {
         const blockMargin = 3;
         const borderWidth = 1;
 
-        canvasContext.fillStyle = "#00FF00";
+        canvasContext.fillStyle = "#008800";
 
         for (let unit of units)
         {
